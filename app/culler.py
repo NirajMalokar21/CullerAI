@@ -3,32 +3,13 @@ import shutil
 import rawpy
 from PIL import Image
 import numpy as np
-
-RAW_EXTENSIONS = (".cr2", ".nef", ".arw")
-IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp") + RAW_EXTENSIONS
-
-def load_image(path):
-    ext = os.path.splitext(path)[1].lower()
-    if ext in RAW_EXTENSIONS:
-        # Convert RAW to PIL Image in memory
-        with rawpy.imread(path) as raw:
-            rgb = raw.postprocess()
-            img = Image.fromarray(rgb)
-        return img
-    else:
-        return Image.open(path)
-
-import os
-import shutil
-import rawpy
-from PIL import Image
-import numpy as np
 import cv2
 
 RAW_EXTENSIONS = (".cr2", ".nef", ".arw")
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp") + RAW_EXTENSIONS
 
-# Your feature extraction function
+# Feature extraction function
+# Returns an array of features for the image provided
 def extract_features(img):
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
@@ -70,11 +51,13 @@ def load_image(path):
         img = cv2.imread(path)  # Reads in BGR format
         return img
 
+# Gives the image a score after extracting features and calling the model
 def score_image(model, path):
     img = load_image(path)
     features = extract_features(img)
     return model.predict([features])[0]
 
+# Culls all the photos in the given source folder based on te threshold
 def cull_photos(model, source_folder, dest_folder, threshold=0.6):
     os.makedirs(dest_folder, exist_ok=True)
     
@@ -83,21 +66,4 @@ def cull_photos(model, source_folder, dest_folder, threshold=0.6):
             full_path = os.path.join(source_folder, filename)
             score = score_image(model, full_path)
             if score >= threshold:
-                shutil.copy(full_path, dest_folder)
-
-
-def score_image(model, path):
-    img = load_image(path)
-    features = extract_features(img)
-    return model.predict([features])[0]
-
-def cull_photos(model, source_folder, dest_folder, threshold=0.6):
-    os.makedirs(dest_folder, exist_ok=True)
-    
-    for filename in os.listdir(source_folder):
-        if filename.lower().endswith(IMAGE_EXTENSIONS):
-            full_path = os.path.join(source_folder, filename)
-            score = score_image(model, full_path)
-            if score >= threshold:
-                # Copy original file (RAW, BMP, JPG, etc.)
                 shutil.copy(full_path, dest_folder)
