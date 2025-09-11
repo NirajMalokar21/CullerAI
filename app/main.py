@@ -5,7 +5,20 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import sys
 import pickle
+import os
 from culler import cull_photos
+
+def load_model():
+    """Load the trained model in a PyInstaller-friendly way."""
+    if getattr(sys, "frozen", False):
+        # PyInstaller bundle
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(base_path, "model", "trained_model.pkl")
+    with open(model_path, "rb") as f:
+        return pickle.load(f)
+
 
 
 class CullerThread(QThread):
@@ -49,14 +62,10 @@ class PhotoCullerApp(QWidget):
         super().__init__()
         self.setWindowTitle("Photo Culler")
         self.setGeometry(300, 200, 500, 250)
-        self.model = self.load_model()
+        self.model = load_model()
         self.source_folder = ""
         self.dest_folder = ""
         self.init_ui()
-
-    def load_model(self):
-        with open("model/trained_model.pkl", "rb") as f:
-            return pickle.load(f)
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -79,7 +88,7 @@ class PhotoCullerApp(QWidget):
         thresh_layout = QHBoxLayout()
         self.threshold_label = QLabel("Threshold:")
         self.threshold_input = QLineEdit()
-        self.threshold_input.setText("5.0")
+        self.threshold_input.setText("1.0")
         thresh_layout.addWidget(self.threshold_label)
         thresh_layout.addWidget(self.threshold_input)
         layout.addLayout(thresh_layout)
